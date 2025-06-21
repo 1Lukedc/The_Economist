@@ -1,0 +1,31 @@
+name: Send latest Economist to Kindle
+
+on:
+  workflow_dispatch:        # manual “Run workflow” button
+  schedule:
+    - cron: '0 0 * * 5'     # every Friday 00:00 UTC
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Install Calibre CLI (needed for conversion)
+      - name: Install Calibre
+        run: |
+          sudo -v && wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin
+
+      # Install Python deps (recipe & mailer script are in this repo)
+      - name: Install requirements
+        run: pip install -r requirements.txt
+
+      # Fetch, build EPUB, e-mail it
+      - name: Fetch Economist and mail to Kindle
+        env:
+          KINDLE_EMAIL: ${{ secrets.KINDLE_EMAIL }}
+          SMTP_USER:    ${{ secrets.SMTP_USER }}
+          SMTP_PASS:    ${{ secrets.SMTP_PASS }}
+          SMTP_HOST:    ${{ secrets.SMTP_HOST }}
+        run: python economist_kindle.py
